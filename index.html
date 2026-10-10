@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kirel – Le carnet de dettes de votre boutique</title>
+<meta name="description" content="Kirel remplace le cahier de dettes : notez ce que chaque client vous doit et ne perdez plus jamais une dette.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#fbfcff; --line:#cddaf3; --ink:#1b2a5c; --muted:#4d5a85;
+  --margin:#d6403a; --ok:#1f8a5b; --btn:#1b2a5c;
+  --hand:'Caveat','Segoe Print','Comic Sans MS',cursive;
+  --sans:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:var(--sans); color:var(--ink); line-height:1.55;
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(var(--line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:100% 32px,32px 100%;
+  background-position:0 0,0 0;
+}
+body::before{ /* marge rouge du cahier */
+  content:""; position:fixed; top:0; bottom:0; left:clamp(14px,5vw,56px);
+  width:2px; background:var(--margin); opacity:.55; pointer-events:none;
+}
+.wrap{max-width:720px; margin:0 auto; padding:0 20px 0 clamp(30px,9vw,80px)}
+header{padding:22px 0 0; font-weight:800; font-size:1.3rem; letter-spacing:.01em}
+header span{font-family:var(--hand); font-weight:600; font-size:1.2rem; color:var(--muted); margin-left:8px}
+h1{font-size:clamp(2rem,8vw,3.3rem); line-height:1.08; font-weight:800; margin:36px 0 16px; max-width:14em}
+.lead{font-size:1.1rem; color:var(--muted); max-width:30em; margin:0 0 26px}
+.btn{
+  display:inline-block; background:var(--btn); color:#fff; text-decoration:none; border:0;
+  font:600 1.05rem var(--sans); padding:14px 24px; border-radius:6px; cursor:pointer;
+}
+.btn:hover{background:#142047}
+:focus-visible{outline:3px solid var(--margin); outline-offset:3px}
+
+/* La page de cahier : élément mémorable */
+.page{
+  position:relative; background:#fff; margin:44px 0 20px; padding:18px 22px 14px;
+  border:1px solid var(--line); border-radius:4px; transform:rotate(-1.2deg);
+  box-shadow:0 14px 30px -18px rgba(27,42,92,.45);
+  font-family:var(--hand); font-size:1.6rem; line-height:1.35;
+}
+.page h2{font:600 1.05rem var(--sans); color:var(--muted); margin:0 0 6px}
+.row{display:flex; justify-content:space-between; gap:12px; padding:3px 0; border-bottom:1px dashed var(--line)}
+.row b{font-weight:600; white-space:nowrap}
+.row.paid{color:var(--ok); text-decoration:line-through; text-decoration-thickness:2px}
+.total{display:flex; justify-content:space-between; margin-top:8px; font-size:1.8rem}
+.stamp{
+  position:absolute; right:14px; top:44px; transform:rotate(11deg);
+  font:800 .95rem var(--sans); color:var(--ok); border:3px solid var(--ok);
+  padding:2px 10px; border-radius:4px; background:#fff; opacity:.92;
+}
+
+section{padding:34px 0}
+h2.title{font-size:1.6rem; font-weight:800; margin:0 0 14px}
+.list{list-style:none; margin:0; padding:0; display:grid; gap:14px}
+.list li{background:rgba(251,252,255,.92); padding:2px 0}
+.list strong{display:block; font-size:1.08rem}
+.list span{color:var(--muted)}
+
+form{background:#fff; border:1px solid var(--line); border-radius:6px; padding:22px; display:grid; gap:14px; max-width:460px}
+label{font-weight:600; display:grid; gap:6px}
+input{font:1rem var(--sans); padding:12px; border:1.5px solid #9fb3df; border-radius:6px; color:var(--ink)}
+input:focus{border-color:var(--ink)}
+.note{font-size:.92rem; color:var(--muted); margin:0}
+footer{padding:20px 0 40px; color:var(--muted); font-size:.92rem}
+
+@media (prefers-reduced-motion:no-preference){
+  .stamp{animation:tamponner .5s .6s both cubic-bezier(.2,1.4,.4,1)}
+  @keyframes tamponner{from{opacity:0; transform:rotate(11deg) scale(2.2)} to{opacity:.92; transform:rotate(11deg) scale(1)}}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>Kirel <span>le carnet de dettes</span></header>
+
+  <main>
+    <h1>Ne perdez plus jamais une dette.</h1>
+    <p class="lead">Kirel remplace le cahier de la boutique. Vous notez ce que chaque client vous doit, et vous le retrouvez en deux secondes, depuis votre téléphone.</p>
+    <a class="btn" href="#contact">Je veux l'essayer</a>
+
+    <div class="page" aria-label="Exemple de page du carnet">
+      <h2>Mes clients – dettes en cours</h2>
+      <div class="row"><span>Mama Joséphine</span><b>4 500</b></div>
+      <div class="row"><span>Jean-Paul</span><b>1 200</b></div>
+      <div class="row paid"><span>Tantine Rose</span><b>2 000</b></div>
+      <div class="row"><span>Alain (moto)</span><b>800</b></div>
+      <div class="total"><span>À récupérer</span><b>6 500</b></div>
+      <div class="stamp">TANTINE ROSE A PAYÉ</div>
+    </div>
+
+    <section>
+      <h2 class="title">Ce que Kirel fait pour vous</h2>
+      <ul class="list">
+        <li><strong>Plus de dette oubliée</strong><span>Chaque dette est écrite avec le nom du client, le montant et la date.</span></li>
+        <li><strong>Retrouvez un client tout de suite</strong><span>Plus besoin de feuilleter le cahier : tapez le nom, tout est là.</span></li>
+        <li><strong>Voyez ce qu'on vous doit</strong><span>Le total à récupérer s'affiche en haut de la page.</span></li>
+      </ul>
+    </section>
+
+    <section id="contact">
+      <h2 class="title">Soyez parmi les premiers</h2>
+      <p class="lead" style="margin-bottom:18px">Kirel n'est pas encore ouvert. Laissez vos coordonnées, nous vous écrivons sur WhatsApp.</p>
+      <form id="form">
+        <label>Votre nom
+          <input name="nom" required autocomplete="name">
+        </label>
+        <label>Nom de votre boutique
+          <input name="boutique" autocomplete="organization">
+        </label>
+        <button class="btn" type="submit">Envoyer sur WhatsApp</button>
+        <p class="note">Le bouton ouvre WhatsApp avec votre message déjà écrit. Il vous reste à l'envoyer.</p>
+      </form>
+    </section>
+  </main>
+
+  <footer>© Kirel</footer>
+</div>
+
+<script>
+document.getElementById('form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var nom = this.nom.value.trim();
+  var boutique = this.boutique.value.trim();
+  var msg = 'Bonjour, je suis ' + nom +
+    (boutique ? ' (boutique : ' + boutique + ')' : '') +
+    '. Je veux essayer Kirel, le carnet de dettes.';
+  window.location.href = 'https://wa.me/237652593638?text=' + encodeURIComponent(msg);
+});
+</script>
+</body>
+</html>
