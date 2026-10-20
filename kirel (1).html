@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kirel – Mon carnet</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1b2a5c">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--paper:#fbfcff;--line:#cddaf3;--ink:#1b2a5c;--muted:#4d5a85;--red:#d6403a;--ok:#1f8a5b}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--ink);background:var(--paper);background-image:linear-gradient(var(--line) 1px,transparent 1px);background-size:100% 32px}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 60px 26px;border-left:2px solid rgba(214,64,58,.5);min-height:100vh}
+h1{margin:0;font-size:1.4rem}
+.sub{color:var(--muted);margin:2px 0 14px;font-size:.95rem}
+.total{background:var(--ink);color:#fff;border-radius:8px;padding:14px 16px;margin-bottom:16px}
+.total small{display:block;opacity:.8;font-size:.85rem}
+.total b{font-size:1.7rem}
+form,.client{background:#fff;border:1px solid var(--line);border-radius:8px}
+form{padding:14px;display:grid;gap:10px;margin-bottom:18px}
+label{font-weight:600;font-size:.92rem;display:grid;gap:4px}
+input{font:1rem inherit;padding:11px;border:1.5px solid #9fb3df;border-radius:6px;color:var(--ink);width:100%}
+input:focus{outline:2px solid var(--ink);border-color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font:600 1rem inherit;border:0;border-radius:6px;padding:12px 14px;cursor:pointer;background:var(--ink);color:#fff}
+button.small{padding:8px 12px;font-size:.9rem}
+button.ok{background:var(--ok)}
+.err{color:var(--red);font-size:.9rem;margin:0;min-height:1.2em}
+h2{font-size:1.1rem;margin:0 0 10px}
+.client{margin-bottom:10px}
+summary{display:flex;justify-content:space-between;gap:10px;padding:13px 14px;cursor:pointer;font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+.client[open] summary{border-bottom:1px dashed var(--line)}
+.line{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px dashed var(--line)}
+.line span small{display:block;color:var(--muted)}
+.actions{padding:10px 14px}
+a.wa{display:inline-block;background:#1a7f4b;color:#fff;text-decoration:none;font-weight:600;padding:9px 14px;border-radius:6px;font-size:.92rem}
+.empty{color:var(--muted);padding:18px 4px}
+#install{display:none;margin:0 0 14px;background:var(--ok)}
+#app,#gate{display:none}
+body.ok #app{display:block}
+body.locked #gate{display:block}
+#code{text-align:center;letter-spacing:2px;text-transform:uppercase}
+#gate a{color:var(--ink);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap" id="gate">
+  <h1>Kirel</h1>
+  <p class="sub">Mon carnet de dettes</p>
+  <form id="gateform" autocomplete="off">
+    <h2>Accès réservé</h2>
+    <p class="sub" style="margin:0">Entrez le code reçu après votre paiement.</p>
+    <label>Code d'accès
+      <input id="code" placeholder="KIREL-XXXXXX" autocapitalize="characters">
+    </label>
+    <p class="err" id="gateerr" role="alert"></p>
+    <button type="submit">Entrer</button>
+  </form>
+  <p class="sub"><a href="https://wa.me/237652593638?text=Bonjour%2C%20je%20veux%20un%20code%20d%27acc%C3%A8s%20pour%20Kirel.">Pas de code ? Écrivez-moi sur WhatsApp</a></p>
+</div>
+
+<div class="wrap" id="app">
+  <h1>Kirel</h1>
+  <p class="sub">Mon carnet de dettes</p>
+
+  <button id="install" type="button">Installer l'application</button>
+
+  <div class="total"><small>Total à récupérer</small><b id="total">0 FCFA</b></div>
+
+  <form id="form" autocomplete="off">
+    <label>Nom du client
+      <input id="client" list="clients" required>
+      <datalist id="clients"></datalist>
+    </label>
+    <div class="two">
+      <label>Montant (FCFA)
+        <input id="montant" type="number" inputmode="numeric" min="1">
+      </label>
+      <label>Téléphone (facultatif)
+        <input id="tel" type="tel" inputmode="tel">
+      </label>
+    </div>
+    <label>Note (facultatif)
+      <input id="note" placeholder="Ex. : sucre et huile">
+    </label>
+    <p class="err" id="err" role="alert"></p>
+    <button type="submit">Ajouter la dette</button>
+  </form>
+
+  <h2>Mes clients</h2>
+  <div id="list"></div>
+</div>
+
+<script>
+var KEY = 'kirel_dettes';
+var dettes = load();
+var ouverts = {};
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; }
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(dettes)); } catch (e) {}
+}
+function fmt(n) { return Math.round(n).toLocaleString('fr-FR') + ' FCFA'; }
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, function (c) {
+    return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c];
+  });
+}
+function cle(nom) { return nom.trim().toLowerCase(); }
+function numeroWa(tel) {
+  var n = String(tel || '').replace(/\D/g, '');
+  if (n.length === 9) n = '237' + n;
+  return n;
+}
+
+function render() {
+  var groupes = {}, ordre = [], total = 0;
+  dettes.forEach(function (d) {
+    if (d.paye) return;
+    var k = cle(d.client);
+    if (!groupes[k]) { groupes[k] = {nom: d.client, tel: '', total: 0, lignes: []}; ordre.push(k); }
+    var g = groupes[k];
+    g.total += d.montant;
+    g.lignes.push(d);
+    if (d.tel) g.tel = d.tel;
+    total += d.montant;
+  });
+  ordre.sort(function (a, b) { return groupes[b].total - groupes[a].total; });
+
+  document.getElementById('total').textContent = fmt(total);
+
+  var noms = {};
+  dettes.forEach(function (d) { noms[cle(d.client)] = d.client; });
+  document.getElementById('clients').innerHTML = Object.keys(noms).map(function (k) {
+    return '<option value="' + esc(noms[k]) + '">';
+  }).join('');
+
+  var list = document.getElementById('list');
+  if (!ordre.length) {
+    list.innerHTML = '<p class="empty">Aucune dette pour le moment. Ajoute la première ci-dessus.</p>';
+    return;
+  }
+  list.innerHTML = ordre.map(function (k) {
+    var g = groupes[k];
+    var lignes = g.lignes.map(function (d) {
+      return '<div class="line"><span>' + fmt(d.montant) +
+        '<small>' + esc(d.date) + (d.note ? ' · ' + esc(d.note) : '') + '</small></span>' +
+        '<button class="small ok" data-pay="' + d.id + '">Payé</button></div>';
+    }).join('');
+    var wa = '';
+    var num = numeroWa(g.tel);
+    if (num) {
+      var msg = 'Bonjour ' + g.nom + ', petit rappel : vous me devez ' + fmt(g.total) + ' à la boutique. Merci !';
+      wa = '<div class="actions"><a class="wa" href="https://wa.me/' + num + '?text=' + encodeURIComponent(msg) + '">Rappeler sur WhatsApp</a></div>';
+    }
+    return '<details class="client" data-k="' + esc(k) + '"' + (ouverts[k] ? ' open' : '') + '>' +
+      '<summary><span>' + esc(g.nom) + '</span><span>' + fmt(g.total) + '</span></summary>' +
+      lignes + wa + '</details>';
+  }).join('');
+}
+
+document.getElementById('form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var err = document.getElementById('err');
+  var nom = document.getElementById('client').value.trim();
+  var montant = parseFloat(document.getElementById('montant').value);
+  if (!nom) { err.textContent = 'Écris le nom du client.'; return; }
+  if (!(montant > 0)) { err.textContent = 'Écris un montant supérieur à 0.'; return; }
+  err.textContent = '';
+  dettes.push({
+    id: Date.now(),
+    client: nom,
+    montant: montant,
+    tel: document.getElementById('tel').value.trim(),
+    note: document.getElementById('note').value.trim(),
+    date: new Date().toLocaleDateString('fr-FR'),
+    paye: false
+  });
+  save();
+  ouverts[cle(nom)] = true;
+  ['client', 'montant', 'tel', 'note'].forEach(function (id) { document.getElementById(id).value = ''; });
+  render();
+});
+
+document.getElementById('list').addEventListener('click', function (e) {
+  var id = e.target.getAttribute('data-pay');
+  if (!id) return;
+  dettes.forEach(function (d) { if (String(d.id) === id) d.paye = true; });
+  save();
+  render();
+});
+
+document.getElementById('list').addEventListener('toggle', function (e) {
+  var k = e.target.getAttribute('data-k');
+  if (k) ouverts[k] = e.target.open;
+}, true);
+
+var invite = null;
+window.addEventListener('beforeinstallprompt', function (e) {
+  e.preventDefault();
+  invite = e;
+  document.getElementById('install').style.display = 'block';
+});
+document.getElementById('install').addEventListener('click', function () {
+  if (!invite) return;
+  invite.prompt();
+  invite = null;
+  this.style.display = 'none';
+});
+window.addEventListener('appinstalled', function () {
+  document.getElementById('install').style.display = 'none';
+});
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function () {});
+}
+
+var CODES = [
+  "5b36f8b7315bc73aeb5665958b5d177f730057c035fb2ee50b7c3ff64d286fbc",
+  "843c65f06845e042585b36d272a2f5c5d36325cc63c970aa0c8282f931ccc88a",
+  "65f3f33dc051ae756044c3d18a529d1a07afcec41cd1c9aef93c1d9078170847",
+  "9c0b0d88aa8b42df17d12e5a0386edebf01c50870044a9e9ff4100d41d035eea",
+  "4eb1de58ed89a45c6434c30f2ff3e6f308a6d56ed1310461cd98c499cdc74e67",
+  "3e47b0bec76fa426efed5d5d1a444fff39e2ee9db9c4cc3b6184e86d065d8b5c",
+  "d7da67dbfc95e199f433dfee27faae271be429999499c5ffdfd6f59ec3340f27",
+  "932ed50f8398e793750bae2c666804e91902104b5da6249dccac7b015ba19b3f",
+  "e6515141f1d1f1d2cbf0efe24020421e0071538c9c0673d7b120bb0ce73c1e58",
+  "b5e745b126140f0c18d2d6aecaaf730c24437fb1043f7ab137840a884b8f9f82"
+];
+function norm(c) { return String(c).trim().toUpperCase().replace(/\s+/g, ''); }
+function sha(t) {
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)).then(function (b) {
+    return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+  });
+}
+function verifier(code) {
+  return Promise.resolve().then(function () { return sha(norm(code)); }).then(function (h) { return CODES.indexOf(h) !== -1; });
+}
+function ouvrir() { document.body.className = 'ok'; render(); }
+function bloquer() { document.body.className = 'locked'; }
+
+var codeSauve = '';
+try { codeSauve = localStorage.getItem('kirel_code') || ''; } catch (e) {}
+if (codeSauve) {
+  verifier(codeSauve).then(function (ok) { if (ok) ouvrir(); else bloquer(); }).catch(bloquer);
+} else {
+  bloquer();
+}
+
+document.getElementById('gateform').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var saisie = document.getElementById('code').value;
+  var err = document.getElementById('gateerr');
+  verifier(saisie).then(function (ok) {
+    if (ok) {
+      try { localStorage.setItem('kirel_code', norm(saisie)); } catch (x) {}
+      err.textContent = '';
+      ouvrir();
+    } else {
+      err.textContent = 'Code incorrect. Vérifie et réessaie.';
+    }
+  }).catch(function () { err.textContent = 'Impossible de vérifier le code sur ce téléphone.'; });
+});
+
+render();
+</script>
+</body>
+</html>
