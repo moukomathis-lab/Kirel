@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kirel Occasion</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#f2f6f4;--card:#fff;--ink:#14201b;--muted:#46564e;--line:#cbd7d1;--main:#0f6b4f;--on:#fff;--ph:#e3eae6}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1613;--card:#17211c;--ink:#e6efea;--muted:#a3b3aa;--line:#2a3830;--main:#4fc79a;--on:#07261b;--ph:#22302a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+main{max-width:720px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:8px 0 12px;color:var(--main)}
+h2{font-size:18px;margin:20px 0 10px}
+.search{width:100%;min-height:48px;font:inherit;padding:0 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.chip{min-height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:600;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--main);border-color:var(--main);color:var(--on)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin:0;padding:0;list-style:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;height:100%}
+.ph{height:120px;background:var(--ph);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+.ph img{width:100%;height:100%;object-fit:cover}
+.body{padding:10px;display:flex;flex-direction:column;gap:4px;flex:1}
+.nom{font-weight:600;font-size:15px}
+.prix{color:var(--main);font-weight:700}
+.shop{color:var(--muted);font-size:13px}
+.btn{margin-top:auto;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--main);color:var(--on);font-weight:600;font-size:14px;text-decoration:none}
+.btn:focus-visible,.chip:focus-visible,.search:focus-visible{outline:3px solid var(--main);outline-offset:2px}
+.empty{color:var(--muted);padding:24px 0;text-align:center}
+.vendre{margin-top:24px;background:#14201b;color:#fff;border-radius:12px;padding:18px}
+.vendre p{margin:6px 0 12px;color:#dde6e1;font-size:15px}
+.vendre a{display:flex;min-height:44px;align-items:center;justify-content:center;border-radius:8px;background:#fff;color:#14201b;font-weight:600;text-decoration:none}
+</style>
+</head>
+<body>
+<main>
+<h1>Kirel Occasion</h1>
+<input class="search" id="q" type="search" aria-label="Rechercher un produit" placeholder="Cherche un téléphone, des vêtements…">
+<div class="chips" id="chips" role="group" aria-label="Catégories"></div>
+<h2>Nouveautés</h2>
+<ul class="grid" id="grid"></ul>
+<section class="vendre">
+<strong>Tu vends de l’occasion ?</strong>
+<p>Ouvre ta boutique, publie tes produits et reçois 90 % de chaque vente.</p>
+<a id="vendre" href="boutique.html">Ouvrir ma boutique</a>
+</section>
+</main>
+
+<script>
+var SB_URL="https://ijblvmrfpihunnqmxftr.supabase.co";
+var SB_KEY="sb_publishable_mc---_lwjH1Rr2-LIr67Cg_OtF5VXYj";
+var PRODUITS=[];
+
+var cat="Tout",texte="";
+function $(id){return document.getElementById(id)}
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
+function wa(num,msg){return "https://wa.me/"+num+"?text="+encodeURIComponent(msg)}
+function fmt(n){return Number(n).toLocaleString("fr-FR")}
+
+function chips(){
+  var box=$("chips");box.innerHTML="";
+  var cats=["Tout"];
+  PRODUITS.forEach(function(p){if(cats.indexOf(p.cat)<0)cats.push(p.cat)});
+  cats.forEach(function(c){
+    var b=el("button","chip",c);b.type="button";b.setAttribute("aria-pressed",c===cat);
+    b.addEventListener("click",function(){cat=c;chips();render()});
+    box.appendChild(b);
+  });
+}
+
+function render(){
+  var g=$("grid");g.innerHTML="";
+  var t=texte.toLowerCase();
+  var liste=PRODUITS.filter(function(p){
+    return (cat==="Tout"||p.cat===cat)&&(!t||(p.nom+" "+p.cat+" "+p.boutique).toLowerCase().indexOf(t)>=0);
+  });
+  if(!liste.length){g.appendChild(el("li","empty","Aucun produit trouvé."));return}
+  liste.forEach(function(p){
+    var li=el("li"),card=el("div","card"),ph=el("div","ph");
+    if(p.photo){var im=el("img");im.src=p.photo;im.alt=p.nom;ph.appendChild(im)}else{ph.textContent="Photo"}
+    var body=el("div","body");
+    body.appendChild(el("div","nom",p.nom));
+    body.appendChild(el("div","prix",p.prix?fmt(p.prix):"Prix sur demande"));
+    body.appendChild(el("div","shop","Vendu par "+p.boutique));
+    var a=el("a","btn","Contacter");
+    a.href=wa(p.whatsapp,"Bonjour, je suis intéressé par « "+p.nom+" » sur Kirel Occasion.");
+    a.target="_blank";a.rel="noopener";
+    a.addEventListener("click",function(){db.from("contacts").insert({produit_id:p.id}).then(function(){})});
+    body.appendChild(a);card.appendChild(ph);card.appendChild(body);li.appendChild(card);g.appendChild(li);
+  });
+}
+
+$("q").addEventListener("input",function(e){texte=e.target.value.trim();render()});
+$("grid").appendChild(el("li","empty","Chargement…"));
+var db=supabase.createClient(SB_URL,SB_KEY);
+db.from("produits").select("id,nom,prix,categorie,photo_url,boutiques(nom,whatsapp)").eq("statut","publie").order("created_at",{ascending:false}).then(function(r){
+  if(r.error){$("grid").innerHTML="";$("grid").appendChild(el("li","empty","Impossible de charger les produits."));return}
+  PRODUITS=r.data.filter(function(p){return p.boutiques}).map(function(p){
+    return {id:p.id,nom:p.nom,prix:p.prix,cat:p.categorie,boutique:p.boutiques.nom,whatsapp:p.boutiques.whatsapp,photo:p.photo_url||""};
+  });
+  chips();render();
+});
+</script>
+</body>
+</html>
