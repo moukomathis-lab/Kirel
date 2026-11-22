@@ -157,7 +157,7 @@ $("fp").addEventListener("submit",async function(e){
   btn.disabled=false;
   if(r.error){msg("Le produit n’a pas pu être ajouté : "+erreur(r.error),1);return}
   $("fp").reset();
-  msg("Produit envoyé. Il apparaîtra sur le site après validation.");
+  msg("Produit publié. Il est maintenant visible sur le site.");
   loadMine();
 });
 
